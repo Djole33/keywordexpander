@@ -1,7 +1,9 @@
 from flask import Flask, jsonify, request
 import requests
+import os
 
 app = Flask(__name__)
+port = int(os.getenv('PORT', 4000))
 
 # URL for Google Autocomplete API
 GOOGLE_AUTOCOMPLETE_URL = "http://suggestqueries.google.com/complete/search"
@@ -35,6 +37,8 @@ def get_suggestions():
             suggestions = response.json()[1]
             all_suggestions.update(suggestions)
         except requests.RequestException as e:
+            # Log the error for debugging purposes
+            app.logger.error(f"Error fetching suggestions for query '{modified_query}': {e}")
             # Return an error response if the request fails
             return jsonify(error=str(e)), 500
     
@@ -54,7 +58,8 @@ def get_suggestions():
                     # Replace space with character
                     modified_query = query[:i] + ' ' + replacement_char + ' ' + query[i+1:]
                 
-                print(f"Modified query: {modified_query}")
+                # Log the modified query
+                app.logger.debug(f"Modified query: {modified_query}")
                 # Fetch suggestions for the modified query
                 fetch_suggestions(modified_query)
 
@@ -63,4 +68,4 @@ def get_suggestions():
 
 if __name__ == '__main__':
     # Run the Flask application in debug mode
-    app.run(debug=True)
+    app.run(port=port)
